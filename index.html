@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXFT BETA</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08150f;color:white;font-family:Arial,sans-serif;text-align:center}
+header{padding:15px;background:#10251b;font-size:25px;font-weight:bold}
+header span{color:#baff55}
+main{max-width:1000px;margin:auto;padding:15px}
+h1{font-size:clamp(25px,5vw,42px)}
+h1 span{color:#baff55}
+canvas{width:100%;display:block;border-radius:10px;background:#267a43;touch-action:none}
+button{padding:12px 16px;border:0;border-radius:8px;background:#baff55;font-weight:bold;cursor:pointer;margin:4px}
+.info{display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap;gap:8px;padding:12px}
+.info strong{color:#baff55;font-size:22px}
+.controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.pad{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
+.pad button{height:40px;padding:0;background:#244333;color:white}
+.empty{visibility:hidden}
+#shoot{height:65px}
+p{color:#b7c9bc;line-height:1.5}
+@media(min-width:650px){.controls{display:none}}
+</style>
+</head>
+<body>
+<header>EX<span>FT</span> <small style="font-size:12px">BETA 0.3</small></header>
+<main>
+<h1>SEU ATAQUE. <span>SEU GOL.</span></h1>
+<p>Você controla o atacante. O goleiro e os defensores são bots.</p>
+<canvas id="field" width="1000" height="600"></canvas>
+<div class="info">
+<div>GOLS: <strong id="score">0</strong></div>
+<div>TEMPO: <strong id="time">90</strong>s</div>
+<div id="message">Pronto para jogar</div>
+<div><button id="start">▶ JOGAR</button><button id="reset">REINICIAR</button></div>
+</div>
+<div class="controls">
+<div class="pad">
+<span class="empty"></span><button data-key="ArrowUp">▲</button><span class="empty"></span>
+<button data-key="ArrowLeft">◀</button><button data-key="ArrowDown">▼</button><button data-key="ArrowRight">▶</button>
+</div>
+<button id="shoot">CHUTAR ⚽</button>
+</div>
+<p><b>PC:</b> WASD ou setas para correr. ESPAÇO para chutar.<br>
+<b>Celular:</b> use as setas e o botão de chute.</p>
+</main>
+<script>
+(()=>{
+const canvas=document.getElementById("field");
+const ctx=canvas.getContext("2d");
+const W=1000,H=600;
+const keys=new Set();
+let playing=false,score=0,time=90,elapsed=0,last=0;
+
+const player={x:280,y:300,r:16,fx:1,fy:0};
+const ball={x:330,y:300,r:9,vx:0,vy:0,held:false};
+const keeper={x:944,y:300,r:19};
+const enemies=[
+{x:550,y:210,r:16},
+{x:620,y:390,r:16},
+{x:750,y:300,r:16}
+];
+
+const $=id=>document.getElementById(id);
+const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+function message(t){$("message").textContent=t}
+
+function reset(){
+playing=false;score=0;time=90;elapsed=0;
+Object.assign(player,{x:280,y:300,fx:1,fy:0});
+Object.assign(ball,{x:330,y:300,vx:0,vy:0,held:false});
+Object.assign(keeper,{x:944,y:300});
+enemies.forEach((e,i)=>Object.assign(e,{
+x:[550,620,750][i],y:[210,390,300][i]
+}));
+$("score").textContent=score;
+$("time").textContent=time;
+message("Pronto para jogar");
+draw();
+}
+
+function start(){
+if(time<=0)reset();
+playing=true;
+last=performance.now();
+message("Partida em andamento");
+}
+
+function shoot(){
+if(!playing)return;
+if(Math.hypot(ball.x-player.x,ball.y-player.y)>43){
+message("Chegue mais perto da bola!");
+return;
+}
+ball.held=false;
+ball.vx=player.fx*450;
+ball.vy=player.fy*450;
+message("Chutou!");
+}
+
+function moveTo(a,x,y,speed,dt){
+let dx=x-a.x,dy=y-a.y;
+let d=Math.hypot(dx,dy)||1;
+let step=Math.min(speed*dt,d);
+a.x+=dx/d*step;
+a.y+=dy/d*step;
+}
+
+function person(a,color){
+ctx.fillStyle="#0004";
+ctx.beginPath();
+ctx.ellipse(a.x,a.y+10,a.r,a.r*.55,0,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle=color;
+ctx.beginPath();
+ctx.arc(a.x,a.y,a.r,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle="#edbd91";
+ctx.beginPath();
+ctx.arc(a.x,a.y-4,a.r*.46,0,Math.PI*2);
+ctx.fill();
+}
+
+function draw(){
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle="#267a43";
+ctx.fillRect(0,0,W,H);
+
+for(let i=0;i<10;i++){
+ctx.fillStyle=i%2?"#ffffff08":"#00000008";
+ctx.fillRect(i*100,0,100,H);
+}
+
+ctx.strokeStyle="#efffee";
+ctx.lineWidth=3;
+ctx.strokeRect(22,22,956,556);
+ctx.beginPath();
+ctx.moveTo(500,22);ctx.lineTo(500,578);
+ctx.stroke();
+ctx.beginPath();
+ctx.arc(500,300,78,0,Math.PI*2);
+ctx.stroke();
+
+ctx.strokeRect(22,150,115,300);
+ctx.strokeRect(22,222,48,156);
+ctx.strokeRect(863,150,115,300);
+ctx.strokeRect(930,222,48,156);
+
+ctx.fillStyle="white";
+ctx.fillRect(0,234,22,132);
+ctx.fillRect(978,234,22,132);
+
+enemies.forEach(e=>person(e,"#e84949"));
+person(keeper,"#3287f0");
+person(player,"#baff55");
+
+ctx.fillStyle="white";
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ctx.fill();
+ctx.strokeStyle="#222";
+ctx.lineWidth=2;
+ctx.beginPath();
+ctx.moveTo(ball.x-5,ball.y);
+ctx.lineTo(ball.x+5,ball.y);
+ctx.moveTo(ball.x,ball.y-5);
+ctx.lineTo(ball.x,ball.y+5);
+ctx.stroke();
+
+if(!playing){
+ctx.fillStyle="#06140dcc";
+ctx.fillRect(0,0,W,H);
+ctx.textAlign="center";
+ctx.fillStyle="#baff55";
+ctx.font="bold 42px Arial";
+ctx.fillText(time<=0?"FIM DE JOGO":"EXFT BETA",500,285);
+ctx.fillStyle="white";
+ctx.font="20px Arial";
+ctx.fillText(time<=0?"Você marcou "+score+" gol(s)!":"Clique em JOGAR para começar",500,325);
+ctx.font="16px Arial";
+ctx.fillText("Ataque para a direita →",500,355);
+}
+}
+
+function update(dt){
+if(!playing)return;
+
+elapsed+=dt;
+if(elapsed>=1){
+let n=Math.floor(elapsed);
+elapsed-=n;
+time=Math.max(0,time-n);
+$("time").textContent=time;
+if(time===0){
+playing=false;
+message("Partida encerrada");
+return;
+}
+}
+
+let x=0,y=0;
+if(keys.has("arrowleft")||keys.has("a"))x--;
+if(keys.has("arrowright")||keys.has("d"))x++;
+if(keys.has("arrowup")||keys.has("w"))y--;
+if(keys.has("arrowdown")||keys.has("s"))y++;
+
+let len=Math.hypot(x,y)||1;
+if(x||y){
+player.fx=x/len;
+player.fy=y/len;
+player.x=clamp(player.x+x/len*245*dt,42,958);
+player.y=clamp(player.y+y/len*245*dt,42,558);
+}
+
+if(!ball.held&&Math.hypot(ball.x-player.x,ball.y-player.y)<40)
+ball.held=true;
+
+if(ball.held){
+ball.x+=(player.x+player.fx*25-ball.x)*Math.min(1,dt*15);
+ball.y+=(player.y+player.fy*25-ball.y)*Math.min(1,dt*15);
+ball.vx=ball.vy=0;
+}else{
+ball.x+=ball.vx*dt;
+ball.y+=ball.vy*dt;
+ball.vx*=Math.pow(.985,dt*60);
+ball.vy*=Math.pow(.985,dt*60);
+}
+
+// Defensores controlados por bots
+enemies.forEach((e,i)=>{
+let tx=ball.held?player.x:ball.x;
+let ty=ball.held?player.y:ball.y;
+if(i===2){
+tx=Math.max(550,tx);
+ty=300+(ty-300)*.55;
+}
+moveTo(e,tx,ty,ball.held?105:78,dt);
+
+let d=Math.hypot(e.x-player.x,e.y-player.y);
+if(d<e.r+player.r&&ball.held){
+ball.held=false;
+ball.x=player.x;
+ball.y=player.y;
+ball.vx=-140;
+ball.vy=(player.y-e.y)*2;
+message("O adversário roubou a bola!");
+}
+});
+
+// Goleiro bot: movimenta-se apenas na linha do gol
+moveTo(keeper,956,clamp(ball.y,222,378),180,dt);
+if(!ball.held&&ball.x>900&&Math.abs(ball.y-keeper.y)<34){
+ball.vx=-Math.abs(ball.vx)*.8-100;
+ball.vy+=(ball.y-keeper.y)*3;
+message("O goleiro defendeu!");
+}
+
+// Gol na trave direita
+if(ball.x>978&&ball.y>234&&ball.y<366){
+score++;
+$("score").textContent=score;
+message("GOOOOL! ⚽");
+Object.assign(ball,{x:330,y:300,vx:0,vy:0,held:false});
+Object.assign(player,{x:280,y:300,fx:1,fy:0});
+enemies.forEach((e,i)=>Object.assign(e,{
+x:[550,620,750][i],y:[210,390,300][i]
+}));
+}
+
+if(ball.x<32){ball.x=32;ball.vx=Math.abs(ball.vx)*.7;ball.held=false}
+if(ball.x>968&&!(ball.y>234&&ball.y<366)){ball.x=968;ball.vx=-Math.abs(ball.vx)*.7;ball.held=false}
+if(ball.y<32||ball.y>568){
+ball.y=clamp(ball.y,32,568);
+ball.vy=-ball.vy*.7;
+ball.held=false;
+}
+}
+
+function loop(now){
+let dt=Math.min((now-last)/1000||0,.035);
+last=now;
+update(dt);
+draw();
+requestAnimationFrame(loop);
+}
+
+$("start").onclick=start;
+$("reset").onclick=reset;
+$("shoot").onclick=shoot;
+
+window.addEventListener("keydown",e=>{
+let k=e.key.toLowerCase();
+if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();
+keys.add(k);
+if(k===" ")shoot();
+if(k==="enter"&&!playing)start();
+});
+window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+
+document.querySelectorAll("[data-key]").forEach(b=>{
+let k=b.dataset.key;
+b.onpointerdown=e=>{
+e.preventDefault();
+keys.add(k);
+b.setPointerCapture(e.pointerId);
+};
+["pointerup","pointercancel","lostpointercapture"].forEach(ev=>
+b.addEventListener(ev,()=>keys.delete(k)));
+});
+
+reset();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
