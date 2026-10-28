@@ -1,320 +1,915 @@
-
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EXFT BETA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>EXFT BETA 1.0</title>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#08150f;color:white;font-family:Arial,sans-serif;text-align:center}
-header{padding:15px;background:#10251b;font-size:25px;font-weight:bold}
-header span{color:#baff55}
-main{max-width:1000px;margin:auto;padding:15px}
-h1{font-size:clamp(25px,5vw,42px)}
-h1 span{color:#baff55}
-canvas{width:100%;display:block;border-radius:10px;background:#267a43;touch-action:none}
-button{padding:12px 16px;border:0;border-radius:8px;background:#baff55;font-weight:bold;cursor:pointer;margin:4px}
-.info{display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap;gap:8px;padding:12px}
-.info strong{color:#baff55;font-size:22px}
-.controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.pad{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
-.pad button{height:40px;padding:0;background:#244333;color:white}
-.empty{visibility:hidden}
-#shoot{height:65px}
-p{color:#b7c9bc;line-height:1.5}
-@media(min-width:650px){.controls{display:none}}
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    background: #10151c;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    overflow: hidden;
+    touch-action: none;
+}
+
+header {
+    height: 52px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #171f2b;
+    border-bottom: 2px solid #36e07b;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+header span {
+    color: #36e07b;
+    margin-left: 7px;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    padding: 8px;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 3;
+    background: #208d47;
+    border: 2px solid #ffffff;
+    border-radius: 5px;
+    touch-action: none;
+}
+
+#info {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: #c9d3df;
+}
+
+#score {
+    font-size: 25px;
+    font-weight: bold;
+    color: white;
+}
+
+#controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    max-width: 600px;
+    margin: 10px auto;
+}
+
+.dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(2, 48px);
+    gap: 4px;
+}
+
+.ctrl {
+    background: #283545;
+    border: 1px solid #536579;
+    color: white;
+    border-radius: 12px;
+    font-size: 22px;
+    font-weight: bold;
+    touch-action: none;
+    user-select: none;
+}
+
+.ctrl:active, .ctrl.active {
+    background: #36b96c;
+    transform: scale(.94);
+}
+
+#up { grid-column: 2; grid-row: 1; }
+#left { grid-column: 1; grid-row: 2; }
+#down { grid-column: 2; grid-row: 2; }
+#right { grid-column: 3; grid-row: 2; }
+
+#actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#shoot {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    background: #e34b4b;
+    border: 3px solid #ffaaaa;
+    font-size: 14px;
+}
+
+#sprint {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #d99a22;
+    border: 2px solid #ffdc7c;
+    font-size: 12px;
+}
+
+#restart {
+    background: #263342;
+    border: 1px solid #536579;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    margin: 4px;
+}
+
+@media (min-width: 800px) {
+    #controls {
+        display: none;
+    }
+}
+
+@media (max-width: 500px) {
+    header { height: 44px; font-size: 18px; }
+    #game-container { padding: 5px; }
+    #info { font-size: 11px; }
+    #score { font-size: 21px; }
+    .dpad {
+        grid-template-columns: repeat(3, 43px);
+        grid-template-rows: repeat(2, 42px);
+    }
+    #shoot { width: 70px; height: 70px; }
+    #sprint { width: 58px; height: 58px; }
+    #controls { gap: 5px; }
+}
 </style>
 </head>
+
 <body>
-<header>EX<span>FT</span> <small style="font-size:12px">BETA 0.3</small></header>
-<main>
-<h1>SEU ATAQUE. <span>SEU GOL.</span></h1>
-<p>Você controla o atacante. O goleiro e os defensores são bots.</p>
-<canvas id="field" width="1000" height="600"></canvas>
-<div class="info">
-<div>GOLS: <strong id="score">0</strong></div>
-<div>TEMPO: <strong id="time">90</strong>s</div>
-<div id="message">Pronto para jogar</div>
-<div><button id="start">▶ JOGAR</button><button id="reset">REINICIAR</button></div>
+<header>EXFT <span>BETA 1.0</span></header>
+
+<div id="game-container">
+    <div id="info">
+        <span>VOCÊ: VERDE</span>
+        <strong id="score">0 - 0</strong>
+        <span>ADVERSÁRIO: VERMELHO</span>
+    </div>
+
+    <canvas id="game" width="1000" height="600"></canvas>
+
+    <div id="controls">
+        <div class="dpad">
+            <button class="ctrl" id="up" data-key="w">▲</button>
+            <button class="ctrl" id="left" data-key="a">◀</button>
+            <button class="ctrl" id="down" data-key="s">▼</button>
+            <button class="ctrl" id="right" data-key="d">▶</button>
+        </div>
+        <div id="actions">
+            <button class="ctrl" id="sprint" data-key="shift">CORRER</button>
+            <button class="ctrl" id="shoot">CHUTAR</button>
+        </div>
+    </div>
+
+    <button id="restart">Reiniciar partida</button>
 </div>
-<div class="controls">
-<div class="pad">
-<span class="empty"></span><button data-key="ArrowUp">▲</button><span class="empty"></span>
-<button data-key="ArrowLeft">◀</button><button data-key="ArrowDown">▼</button><button data-key="ArrowRight">▶</button>
-</div>
-<button id="shoot">CHUTAR ⚽</button>
-</div>
-<p><b>PC:</b> WASD ou setas para correr. ESPAÇO para chutar.<br>
-<b>Celular:</b> use as setas e o botão de chute.</p>
-</main>
+
 <script>
-(()=>{
-const canvas=document.getElementById("field");
-const ctx=canvas.getContext("2d");
-const W=1000,H=600;
-const keys=new Set();
-let playing=false,score=0,time=90,elapsed=0,last=0;
+"use strict";
 
-const player={x:280,y:300,r:16,fx:1,fy:0};
-const ball={x:330,y:300,r:9,vx:0,vy:0,held:false};
-const keeper={x:944,y:300,r:19};
-const enemies=[
-{x:550,y:210,r:16},
-{x:620,y:390,r:16},
-{x:750,y:300,r:16}
-];
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreDisplay = document.getElementById("score");
 
-const $=id=>document.getElementById(id);
-const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
-function message(t){$("message").textContent=t}
+const W = canvas.width;
+const H = canvas.height;
 
-function reset(){
-playing=false;score=0;time=90;elapsed=0;
-Object.assign(player,{x:280,y:300,fx:1,fy:0});
-Object.assign(ball,{x:330,y:300,vx:0,vy:0,held:false});
-Object.assign(keeper,{x:944,y:300});
-enemies.forEach((e,i)=>Object.assign(e,{
-x:[550,620,750][i],y:[210,390,300][i]
-}));
-$("score").textContent=score;
-$("time").textContent=time;
-message("Pronto para jogar");
-draw();
+const keys = Object.create(null);
+
+let playerScore = 0;
+let enemyScore = 0;
+let lastTime = 0;
+let gameTime = 0;
+let message = "";
+let messageTime = 0;
+let playerKickLock = 0;
+let enemyKickLock = 0;
+let playerStealLock = 0;
+let enemyStealLock = 0;
+let shotPower = 0;
+
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+function makePlayer(x, y, color, r = 17) {
+    return {
+        x, y, color, r,
+        vx: 0, vy: 0,
+        fx: 1, fy: 0,
+        speed: 250,
+        hasBall: false,
+        runTime: 0,
+        kickFlash: 0
+    };
 }
 
-function start(){
-if(time<=0)reset();
-playing=true;
-last=performance.now();
-message("Partida em andamento");
+let player, enemy, keeperPlayer, keeperEnemy, ball;
+
+function resetPositions() {
+    player = makePlayer(260, 300, "#38f078");
+    enemy = makePlayer(740, 300, "#f04b4b");
+    enemy.fx = -1;
+
+    keeperPlayer = makePlayer(65, 300, "#48baff", 18);
+    keeperEnemy = makePlayer(935, 300, "#48baff", 18);
+
+    keeperPlayer.speed = 75;
+    keeperEnemy.speed = 75;
+
+    ball = {
+        x: 500, y: 300, r: 8,
+        vx: 0, vy: 0,
+        owner: null,
+        spin: 0,
+        lastTouch: null
+    };
+
+    playerKickLock = 0;
+    enemyKickLock = 0;
+    playerStealLock = 0;
+    enemyStealLock = 0;
 }
 
-function shoot(){
-if(!playing)return;
-if(Math.hypot(ball.x-player.x,ball.y-player.y)>43){
-message("Chegue mais perto da bola!");
-return;
-}
-ball.held=false;
-ball.vx=player.fx*450;
-ball.vy=player.fy*450;
-message("Chutou!");
+resetPositions();
+
+function updateScore() {
+    scoreDisplay.textContent = playerScore + " - " + enemyScore;
 }
 
-function moveTo(a,x,y,speed,dt){
-let dx=x-a.x,dy=y-a.y;
-let d=Math.hypot(dx,dy)||1;
-let step=Math.min(speed*dt,d);
-a.x+=dx/d*step;
-a.y+=dy/d*step;
+function showMessage(text, duration = 1.2) {
+    message = text;
+    messageTime = duration;
 }
 
-function person(a,color){
-ctx.fillStyle="#0004";
-ctx.beginPath();
-ctx.ellipse(a.x,a.y+10,a.r,a.r*.55,0,0,Math.PI*2);
-ctx.fill();
-ctx.fillStyle=color;
-ctx.beginPath();
-ctx.arc(a.x,a.y,a.r,0,Math.PI*2);
-ctx.fill();
-ctx.fillStyle="#edbd91";
-ctx.beginPath();
-ctx.arc(a.x,a.y-4,a.r*.46,0,Math.PI*2);
-ctx.fill();
+function resetAfterGoal(scoredByPlayer) {
+    if (scoredByPlayer) {
+        playerScore++;
+        showMessage("GOOOOL!", 1.5);
+    } else {
+        enemyScore++;
+        showMessage("GOL DO ADVERSÁRIO!", 1.5);
+    }
+
+    updateScore();
+    resetPositions();
 }
 
-function draw(){
-ctx.clearRect(0,0,W,H);
-ctx.fillStyle="#267a43";
-ctx.fillRect(0,0,W,H);
+function getMovementInput() {
+    let x = 0;
+    let y = 0;
 
-for(let i=0;i<10;i++){
-ctx.fillStyle=i%2?"#ffffff08":"#00000008";
-ctx.fillRect(i*100,0,100,H);
+    if (keys.a || keys.arrowleft) x--;
+    if (keys.d || keys.arrowright) x++;
+    if (keys.w || keys.arrowup) y--;
+    if (keys.s || keys.arrowdown) y++;
+
+    const len = Math.hypot(x, y);
+
+    if (len > 0) {
+        x /= len;
+        y /= len;
+    }
+
+    return { x, y, len };
 }
 
-ctx.strokeStyle="#efffee";
-ctx.lineWidth=3;
-ctx.strokeRect(22,22,956,556);
-ctx.beginPath();
-ctx.moveTo(500,22);ctx.lineTo(500,578);
-ctx.stroke();
-ctx.beginPath();
-ctx.arc(500,300,78,0,Math.PI*2);
-ctx.stroke();
+/* MOVIMENTAÇÃO ARCADE:
+   aceleração rápida, mudança de direção forte e
+   frenagem rápida quando o jogador solta as teclas. */
 
-ctx.strokeRect(22,150,115,300);
-ctx.strokeRect(22,222,48,156);
-ctx.strokeRect(863,150,115,300);
-ctx.strokeRect(930,222,48,156);
+function movePlayerArcade(p, inputX, inputY, dt, sprint = false) {
+    const inputLen = Math.hypot(inputX, inputY);
 
-ctx.fillStyle="white";
-ctx.fillRect(0,234,22,132);
-ctx.fillRect(978,234,22,132);
+    if (inputLen > 1) {
+        inputX /= inputLen;
+        inputY /= inputLen;
+    }
 
-enemies.forEach(e=>person(e,"#e84949"));
-person(keeper,"#3287f0");
-person(player,"#baff55");
+    const carrying = ball.owner === p;
+    const sprinting = sprint && inputLen > 0;
 
-ctx.fillStyle="white";
-ctx.beginPath();
-ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-ctx.fill();
-ctx.strokeStyle="#222";
-ctx.lineWidth=2;
-ctx.beginPath();
-ctx.moveTo(ball.x-5,ball.y);
-ctx.lineTo(ball.x+5,ball.y);
-ctx.moveTo(ball.x,ball.y-5);
-ctx.lineTo(ball.x,ball.y+5);
-ctx.stroke();
+    let maxSpeed = p === player ? 300 : 205;
 
-if(!playing){
-ctx.fillStyle="#06140dcc";
-ctx.fillRect(0,0,W,H);
-ctx.textAlign="center";
-ctx.fillStyle="#baff55";
-ctx.font="bold 42px Arial";
-ctx.fillText(time<=0?"FIM DE JOGO":"EXFT BETA",500,285);
-ctx.fillStyle="white";
-ctx.font="20px Arial";
-ctx.fillText(time<=0?"Você marcou "+score+" gol(s)!":"Clique em JOGAR para começar",500,325);
-ctx.font="16px Arial";
-ctx.fillText("Ataque para a direita →",500,355);
-}
-}
+    if (carrying) maxSpeed *= 0.91;
+    if (sprinting) maxSpeed *= 1.32;
 
-function update(dt){
-if(!playing)return;
+    const acceleration = inputLen > 0 ? 2300 : 2900;
 
-elapsed+=dt;
-if(elapsed>=1){
-let n=Math.floor(elapsed);
-elapsed-=n;
-time=Math.max(0,time-n);
-$("time").textContent=time;
-if(time===0){
-playing=false;
-message("Partida encerrada");
-return;
-}
-}
+    if (inputLen > 0) {
+        const targetVX = inputX * maxSpeed;
+        const targetVY = inputY * maxSpeed;
 
-let x=0,y=0;
-if(keys.has("arrowleft")||keys.has("a"))x--;
-if(keys.has("arrowright")||keys.has("d"))x++;
-if(keys.has("arrowup")||keys.has("w"))y--;
-if(keys.has("arrowdown")||keys.has("s"))y++;
+        // Responde mais rápido ao inverter a direção.
+        const reversing =
+            (p.vx * inputX + p.vy * inputY) < -20;
 
-let len=Math.hypot(x,y)||1;
-if(x||y){
-player.fx=x/len;
-player.fy=y/len;
-player.x=clamp(player.x+x/len*245*dt,42,958);
-player.y=clamp(player.y+y/len*245*dt,42,558);
+        const response = reversing ? 15 : 20;
+        const blend = Math.min(1, response * dt);
+
+        p.vx += (targetVX - p.vx) * blend;
+        p.vy += (targetVY - p.vy) * blend;
+
+        // Impulso inicial para dar sensação de arrancada.
+        p.vx += inputX * acceleration * dt * 0.18;
+        p.vy += inputY * acceleration * dt * 0.18;
+
+        p.fx = inputX;
+        p.fy = inputY;
+    } else {
+        // Parada curta: nada de escorregar pelo gramado.
+        const friction = Math.exp(-12 * dt);
+        p.vx *= friction;
+        p.vy *= friction;
+    }
+
+    const speed = Math.hypot(p.vx, p.vy);
+
+    if (speed > maxSpeed) {
+        p.vx = p.vx / speed * maxSpeed;
+        p.vy = p.vy / speed * maxSpeed;
+    }
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    p.x = clamp(p.x, p.r + 5, W - p.r - 5);
+    p.y = clamp(p.y, p.r + 5, H - p.r - 5);
+
+    if (speed > 20) {
+        p.runTime += dt * (sprinting ? 15 : 10);
+    } else {
+        p.runTime *= Math.exp(-8 * dt);
+    }
+
+    p.kickFlash = Math.max(0, p.kickFlash - dt);
 }
 
-if(!ball.held&&Math.hypot(ball.x-player.x,ball.y-player.y)<40)
-ball.held=true;
+function moveToArcade(p, tx, ty, speed, dt) {
+    const dx = tx - p.x;
+    const dy = ty - p.y;
+    const dist = Math.hypot(dx, dy);
 
-if(ball.held){
-ball.x+=(player.x+player.fx*25-ball.x)*Math.min(1,dt*15);
-ball.y+=(player.y+player.fy*25-ball.y)*Math.min(1,dt*15);
-ball.vx=ball.vy=0;
-}else{
-ball.x+=ball.vx*dt;
-ball.y+=ball.vy*dt;
-ball.vx*=Math.pow(.985,dt*60);
-ball.vy*=Math.pow(.985,dt*60);
+    if (dist < 4) {
+        movePlayerArcade(p, 0, 0, dt);
+        return;
+    }
+
+    const factor = Math.min(1, dist / 65);
+    const max = speed * factor;
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const blend = Math.min(1, 11 * dt);
+    p.vx += (nx * max - p.vx) * blend;
+    p.vy += (ny * max - p.vy) * blend;
+
+    const currentSpeed = Math.hypot(p.vx, p.vy);
+    if (currentSpeed > speed) {
+        p.vx = p.vx / currentSpeed * speed;
+        p.vy = p.vy / currentSpeed * speed;
+    }
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    p.x = clamp(p.x, p.r + 5, W - p.r - 5);
+    p.y = clamp(p.y, p.r + 5, H - p.r - 5);
+
+    if (currentSpeed > 12) {
+        p.fx = p.vx / currentSpeed;
+        p.fy = p.vy / currentSpeed;
+    }
+
+    p.runTime += dt * 9;
 }
 
-// Defensores controlados por bots
-enemies.forEach((e,i)=>{
-let tx=ball.held?player.x:ball.x;
-let ty=ball.held?player.y:ball.y;
-if(i===2){
-tx=Math.max(550,tx);
-ty=300+(ty-300)*.55;
-}
-moveTo(e,tx,ty,ball.held?105:78,dt);
+function attachBall(p) {
+    ball.owner = p;
+    p.hasBall = true;
+    ball.lastTouch = p;
 
-let d=Math.hypot(e.x-player.x,e.y-player.y);
-if(d<e.r+player.r&&ball.held){
-ball.held=false;
-ball.x=player.x;
-ball.y=player.y;
-ball.vx=-140;
-ball.vy=(player.y-e.y)*2;
-message("O adversário roubou a bola!");
+    const forwardDistance = p.r + ball.r + 5;
+    ball.x = p.x + p.fx * forwardDistance;
+    ball.y = p.y + p.fy * forwardDistance;
+    ball.vx = p.vx;
+    ball.vy = p.vy;
+
+    if (p === player) enemy.hasBall = false;
+    if (p === enemy) player.hasBall = false;
 }
+
+function releaseBall() {
+    if (ball.owner) {
+        ball.owner.hasBall = false;
+        ball.owner = null;
+    }
+}
+
+function shoot(p) {
+    if (ball.owner !== p) return;
+
+    const speed = Math.hypot(p.vx, p.vy);
+    const runningBonus = Math.min(100, speed * 0.20);
+
+    // A direção do chute segue a orientação do jogador.
+    // Se estiver parado, usa a última direção escolhida.
+    let dx = p.fx;
+    let dy = p.fy;
+
+    if (p === player && Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+        dx = 1;
+        dy = 0;
+    }
+
+    if (p === enemy) {
+        dx = -Math.max(0.35, Math.abs(dx));
+        dy = p.fy;
+    }
+
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len;
+    dy /= len;
+
+    releaseBall();
+
+    ball.x = p.x + dx * (p.r + ball.r + 7);
+    ball.y = p.y + dy * (p.r + ball.r + 7);
+
+    const power = (p === player ? 600 : 475) + runningBonus;
+
+    ball.vx = dx * power;
+    ball.vy = dy * power;
+
+    // Pequeno impulso vertical lateral mantém os chutes diagonais naturais.
+    ball.spin = dy * 0.7;
+    ball.lastTouch = p;
+    p.kickFlash = 0.16;
+
+    if (p === player) {
+        playerKickLock = 0.42;
+    } else {
+        enemyKickLock = 1.15;
+    }
+}
+
+function attemptPlayerShot() {
+    if (ball.owner === player) {
+        shoot(player);
+    } else {
+        // Se estiver perto da bola solta, tenta dominar.
+        const dist = Math.hypot(ball.x - player.x, ball.y - player.y);
+        if (!ball.owner && dist < 43 && playerKickLock <= 0) {
+            attachBall(player);
+        }
+    }
+}
+
+function updatePlayer(dt) {
+    const input = getMovementInput();
+    movePlayerArcade(
+        player,
+        input.x,
+        input.y,
+        dt,
+        !!keys.shift
+    );
+
+    if (playerStealLock > 0) playerStealLock -= dt;
+    if (playerKickLock > 0) playerKickLock -= dt;
+
+    // Pressão e disputa de bola.
+    if (ball.owner === enemy && playerStealLock <= 0) {
+        const d = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+
+        if (d < player.r + enemy.r + 3) {
+            attachBall(player);
+            playerStealLock = 0.35;
+            showMessage("VOCÊ ROUBOU A BOLA!", 0.7);
+        }
+    }
+
+    if (!ball.owner && playerKickLock <= 0) {
+        const d = Math.hypot(player.x - ball.x, player.y - ball.y);
+
+        if (d < player.r + ball.r + 10) {
+            attachBall(player);
+        }
+    }
+}
+
+function updateEnemy(dt) {
+    if (enemyKickLock > 0) enemyKickLock -= dt;
+    if (enemyStealLock > 0) enemyStealLock -= dt;
+
+    if (ball.owner === enemy) {
+        // Avança para o gol esquerdo.
+        const targetY = clamp(300 + (player.y - 300) * 0.35, 190, 410);
+
+        moveToArcade(
+            enemy,
+            Math.max(115, enemy.x - 190),
+            targetY,
+            165,
+            dt
+        );
+
+        enemy.fx = -Math.abs(enemy.fx || 1);
+
+        // Chuta antes de ficar em cima do goleiro.
+        if (enemy.x < 650 && enemyKickLock <= 0) {
+            shoot(enemy);
+        }
+    } else if (ball.owner === player) {
+        // Persegue e tenta tomar a bola.
+        const offsetY = player.y > enemy.y ? 12 : -12;
+
+        moveToArcade(
+            enemy,
+            player.x + 35,
+            player.y + offsetY,
+            185,
+            dt
+        );
+
+        const d = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+
+        if (d < enemy.r + player.r + 2 && enemyStealLock <= 0) {
+            releaseBall();
+            attachBall(enemy);
+            enemyStealLock = 0.45;
+        }
+    } else {
+        // Vai buscar a bola quando ninguém a controla.
+        moveToArcade(enemy, ball.x + 22, ball.y, 190, dt);
+
+        const d = Math.hypot(enemy.x - ball.x, enemy.y - ball.y);
+
+        if (d < enemy.r + ball.r + 10 && enemyKickLock <= 0) {
+            attachBall(enemy);
+        }
+    }
+}
+
+function updateKeepers(dt) {
+    const targetY = clamp(ball.y, 265, 335);
+
+    moveToArcade(keeperPlayer, 65, targetY, 75, dt);
+    moveToArcade(keeperEnemy, 935, targetY, 75, dt);
+}
+
+function updateBall(dt) {
+    if (ball.owner) {
+        const p = ball.owner;
+        const lead = p.r + ball.r + (Math.hypot(p.vx, p.vy) > 150 ? 10 : 5);
+
+        const targetX = p.x + p.fx * lead;
+        const targetY = p.y + p.fy * lead;
+
+        // A bola acompanha os pés, mas com pequeno atraso.
+        const blend = Math.min(1, 22 * dt);
+        ball.x += (targetX - ball.x) * blend;
+        ball.y += (targetY - ball.y) * blend;
+        ball.vx = p.vx;
+        ball.vy = p.vy;
+        return;
+    }
+
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    const drag = Math.exp(-1.35 * dt);
+    ball.vx *= drag;
+    ball.vy *= drag;
+
+    ball.vy += ball.spin * 8 * dt;
+    ball.spin *= Math.exp(-2 * dt);
+
+    // Laterais do campo.
+    if (ball.y < ball.r) {
+        ball.y = ball.r;
+        ball.vy = Math.abs(ball.vy) * 0.75;
+    }
+
+    if (ball.y > H - ball.r) {
+        ball.y = H - ball.r;
+        ball.vy = -Math.abs(ball.vy) * 0.75;
+    }
+
+    // Gols.
+    const goalTop = 235;
+    const goalBottom = 365;
+    const insideGoal = ball.y > goalTop && ball.y < goalBottom;
+
+    if (ball.x < 0) {
+        if (insideGoal) {
+            resetAfterGoal(false);
+            return;
+        }
+        ball.x = ball.r;
+        ball.vx = Math.abs(ball.vx) * 0.7;
+    }
+
+    if (ball.x > W) {
+        if (insideGoal) {
+            resetAfterGoal(true);
+            return;
+        }
+        ball.x = W - ball.r;
+        ball.vx = -Math.abs(ball.vx) * 0.7;
+    }
+
+    collideKeeper(keeperPlayer, 1);
+    collideKeeper(keeperEnemy, -1);
+}
+
+function collideKeeper(k, direction) {
+    if (ball.owner) return;
+
+    const d = Math.hypot(ball.x - k.x, ball.y - k.y);
+
+    if (d < k.r + ball.r) {
+        const nx = (ball.x - k.x) / (d || 1);
+        const ny = (ball.y - k.y) / (d || 1);
+
+        ball.x = k.x + nx * (k.r + ball.r + 1);
+        ball.y = k.y + ny * (k.r + ball.r + 1);
+
+        ball.vx = direction * Math.max(230, Math.abs(ball.vx) * 0.75);
+        ball.vy = ny * 190 + k.vy * 0.25;
+        ball.lastTouch = k;
+    }
+}
+
+function update(dt) {
+    gameTime += dt;
+    if (messageTime > 0) messageTime -= dt;
+
+    updatePlayer(dt);
+    updateEnemy(dt);
+    updateKeepers(dt);
+    updateBall(dt);
+
+    // Atualiza goleiros depois da bola para corrigir contatos.
+    if (!ball.owner) {
+        collideKeeper(keeperPlayer, 1);
+        collideKeeper(keeperEnemy, -1);
+    }
+}
+
+function drawField() {
+    ctx.fillStyle = "#208d47";
+    ctx.fillRect(0, 0, W, H);
+
+    // Faixas do gramado.
+    for (let i = 0; i < 10; i++) {
+        ctx.fillStyle = i % 2 === 0
+            ? "rgba(255,255,255,0.035)"
+            : "rgba(0,0,0,0.035)";
+        ctx.fillRect(i * 100, 0, 100, H);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(18, 18, W - 36, H - 36);
+
+    ctx.beginPath();
+    ctx.moveTo(W / 2, 18);
+    ctx.lineTo(W / 2, H - 18);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2, 75, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+
+    // Áreas.
+    ctx.strokeRect(18, 190, 140, 220);
+    ctx.strokeRect(18, 240, 55, 120);
+    ctx.strokeRect(W - 158, 190, 140, 220);
+    ctx.strokeRect(W - 73, 240, 55, 120);
+
+    // Gols.
+    ctx.fillStyle = "#d9e4ee";
+    ctx.fillRect(0, 235, 18, 130);
+    ctx.fillRect(W - 18, 235, 18, 130);
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 235, 18, 130);
+    ctx.strokeRect(W - 18, 235, 18, 130);
+}
+
+function drawPlayer(p, label) {
+    const speed = Math.hypot(p.vx, p.vy);
+    const moving = speed > 12;
+    const legSwing = moving ? Math.sin(p.runTime) * Math.min(7, speed * 0.025) : 0;
+
+    // Sombra.
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + p.r * 0.7, p.r * 0.95, p.r * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pernas animadas.
+    ctx.strokeStyle = "#17232d";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(p.x - 5, p.y + 7);
+    ctx.lineTo(p.x - 5 - legSwing, p.y + p.r + 3);
+    ctx.moveTo(p.x + 5, p.y + 7);
+    ctx.lineTo(p.x + 5 + legSwing, p.y + p.r + 3);
+    ctx.stroke();
+
+    // Corpo.
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Direção do jogador.
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + p.fx * (p.r - 3), p.y + p.fy * (p.r - 3));
+    ctx.stroke();
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(label, p.x, p.y - p.r - 9);
+
+    if (ball.owner === p) {
+        ctx.strokeStyle = "#fff16b";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r + 5 + Math.sin(gameTime * 9) * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    if (p.kickFlash > 0) {
+        ctx.strokeStyle = "#fff16b";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r + 8, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+
+function drawBall() {
+    // Sombra da bola.
+    ctx.fillStyle = "rgba(0,0,0,0.24)";
+    ctx.beginPath();
+    ctx.ellipse(ball.x + 2, ball.y + 5, ball.r + 1, ball.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#252525";
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    ctx.fillStyle = "#222222";
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function draw() {
+    drawField();
+
+    drawPlayer(keeperPlayer, "GOL");
+    drawPlayer(keeperEnemy, "GOL");
+    drawPlayer(player, "VOCÊ");
+    drawPlayer(enemy, "CPU");
+    drawBall();
+
+    if (messageTime > 0) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, messageTime * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(250, 245, 500, 100);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 32px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(message, W / 2, H / 2);
+        ctx.restore();
+    }
+}
+
+function loop(timestamp) {
+    const dt = Math.min((timestamp - (lastTime || timestamp)) / 1000, 0.033);
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(loop);
+}
+
+window.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+
+    if ([
+        "arrowup", "arrowdown", "arrowleft", "arrowright", " "
+    ].includes(k)) {
+        e.preventDefault();
+    }
+
+    if (k === " " && !e.repeat) {
+        attemptPlayerShot();
+    } else {
+        keys[k] = true;
+    }
 });
 
-// Goleiro bot: movimenta-se apenas na linha do gol
-moveTo(keeper,956,clamp(ball.y,222,378),180,dt);
-if(!ball.held&&ball.x>900&&Math.abs(ball.y-keeper.y)<34){
-ball.vx=-Math.abs(ball.vx)*.8-100;
-ball.vy+=(ball.y-keeper.y)*3;
-message("O goleiro defendeu!");
-}
+window.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
 
-// Gol na trave direita
-if(ball.x>978&&ball.y>234&&ball.y<366){
-score++;
-$("score").textContent=score;
-message("GOOOOL! ⚽");
-Object.assign(ball,{x:330,y:300,vx:0,vy:0,held:false});
-Object.assign(player,{x:280,y:300,fx:1,fy:0});
-enemies.forEach((e,i)=>Object.assign(e,{
-x:[550,620,750][i],y:[210,390,300][i]
-}));
-}
+window.addEventListener("blur", () => {
+    for (const k in keys) keys[k] = false;
+});
 
-if(ball.x<32){ball.x=32;ball.vx=Math.abs(ball.vx)*.7;ball.held=false}
-if(ball.x>968&&!(ball.y>234&&ball.y<366)){ball.x=968;ball.vx=-Math.abs(ball.vx)*.7;ball.held=false}
-if(ball.y<32||ball.y>568){
-ball.y=clamp(ball.y,32,568);
-ball.vy=-ball.vy*.7;
-ball.held=false;
-}
-}
+document.querySelectorAll("[data-key]").forEach(button => {
+    const key = button.dataset.key;
 
-function loop(now){
-let dt=Math.min((now-last)/1000||0,.035);
-last=now;
-update(dt);
-draw();
+    const press = e => {
+        e.preventDefault();
+        keys[key] = true;
+        button.classList.add("active");
+        if (button.setPointerCapture && e.pointerId !== undefined) {
+            try { button.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+    };
+
+    const release = e => {
+        e.preventDefault();
+        keys[key] = false;
+        button.classList.remove("active");
+    };
+
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", release);
+});
+
+document.getElementById("shoot").addEventListener("pointerdown", e => {
+    e.preventDefault();
+    attemptPlayerShot();
+});
+
+document.getElementById("restart").addEventListener("click", () => {
+    playerScore = 0;
+    enemyScore = 0;
+    updateScore();
+    resetPositions();
+    showMessage("PARTIDA REINICIADA", 1);
+});
+
+updateScore();
 requestAnimationFrame(loop);
-}
-
-$("start").onclick=start;
-$("reset").onclick=reset;
-$("shoot").onclick=shoot;
-
-window.addEventListener("keydown",e=>{
-let k=e.key.toLowerCase();
-if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();
-keys.add(k);
-if(k===" ")shoot();
-if(k==="enter"&&!playing)start();
-});
-window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
-
-document.querySelectorAll("[data-key]").forEach(b=>{
-let k=b.dataset.key;
-b.onpointerdown=e=>{
-e.preventDefault();
-keys.add(k);
-b.setPointerCapture(e.pointerId);
-};
-["pointerup","pointercancel","lostpointercapture"].forEach(ev=>
-b.addEventListener(ev,()=>keys.delete(k)));
-});
-
-reset();
-requestAnimationFrame(loop);
-})();
 </script>
 </body>
 </html>
+```
